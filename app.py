@@ -184,6 +184,28 @@ def rate_site(site_id):
     return jsonify({'message': 'Rating saved successfully'})
 
 @app.route('/sitios', methods=['GET'])
+def get_all_sites():
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    sort_by = request.args.get('sort_by')  # Parámetro opcional para ordenar
+    category = request.args.get('category')  # Parámetro opcional para filtrar por categoría
+
+    if sort_by == 'rating':
+        sql = "SELECT * FROM sitios ORDER BY rating_promedio DESC"
+    else:
+        sql = "SELECT * FROM sitios ORDER BY id ASC"
+
+    if category:
+        sql += " WHERE categorias LIKE %s"
+        category_filter = f"%{category}%"
+        cursor.execute(sql, (category_filter,))
+    else:
+        cursor.execute(sql)
+
+    sites = cursor.fetchall()
+    cursor.close()
+    return jsonify(sites)
+
+
 
 @app.route('/usuario/<int:user_id>/calificaciones', methods=['GET'])
 #@login_required
@@ -206,26 +228,6 @@ def get_user_ratings(user_id):
     return jsonify(ratings)
 
 
-def get_all_sites():
-    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    sort_by = request.args.get('sort_by')  # Parámetro opcional para ordenar
-    category = request.args.get('category')  # Parámetro opcional para filtrar por categoría
-
-    if sort_by == 'rating':
-        sql = "SELECT * FROM sitios ORDER BY rating_promedio DESC"
-    else:
-        sql = "SELECT * FROM sitios ORDER BY id ASC"
-
-    if category:
-        sql += " WHERE categorias LIKE %s"
-        category_filter = f"%{category}%"
-        cursor.execute(sql, (category_filter,))
-    else:
-        cursor.execute(sql)
-
-    sites = cursor.fetchall()
-    cursor.close()
-    return jsonify(sites)
 
 @app.route('/usuario/<int:user_id>/recomendaciones', methods=['GET'])
 #@login_required
